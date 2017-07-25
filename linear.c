@@ -3,7 +3,7 @@
 #include "linear.h"
 
 vec3 vec3_null = {0.0, 0.0, 0.0};
-vec4 vec4_null = {0.0, 0.0, 0.0, 0.0};
+vec4 vec4_null = {0.0, 0.0, 0.0, 1.0};
 
 vec3 vec3_unit_x = {1.0, 0.0, 0.0};
 vec3 vec3_unit_y = {0.0, 1.0, 0.0};
