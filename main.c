@@ -50,6 +50,75 @@ static void vector_draw(vec3 *v)
 	glEnd();
 }
 
+static GLuint cylinder_display_list(float step)
+{
+	GLuint list;
+	float angle;
+	int i;
+	int imax = (int)((360.0f/step) + 1.0f) + 1;
+	vec3 vertex[imax];
+	list = glGenLists(1);
+	vec3 center = {0.5, 0.5, 0.5};
+	float r = 0.5;
+
+	for (i = 0, angle = 0.0; i < imax && angle < 360.0f; i++, angle = i * step) {
+		vertex[i][0] = cosf(angle * M_PI / 180.0f);
+		vertex[i][2] = sinf(angle * M_PI / 180.0f);
+	}
+
+	vertex[i][0] = cosf(0.0);
+	vertex[i][2] = sinf(0.0);
+	imax = i + 1;
+
+	glNewList(list, GL_COMPILE);
+
+		glBegin(GL_TRIANGLE_FAN);
+
+			/* top face */
+			glColor3f(1, 0, 0);
+			glNormal3f(0.0, 1.0, 0.0);
+			glVertex3f(center[0], 1.0, center[2]);
+
+			for (i = 0; i < imax; i++)
+				glVertex3f(center[0] + r * vertex[i][0], 1.0, center[2] + r * vertex[i][2]);
+
+			glEnd();
+
+		glBegin(GL_TRIANGLE_FAN);
+
+			/* bottom face */
+			glColor3f(0, 0, 1);
+			glNormal3f(0.0, -1.0, 0.0);
+			glVertex3f(center[0], 0.0, center[2]);
+
+			for (i = 0; i < imax; i++)
+				glVertex3f(center[0] + r * vertex[i][0], 0.0, center[2] + r * vertex[i][2]);
+
+		glEnd();
+
+		glBegin(GL_QUADS);
+
+			/* side faces */
+			glColor3f(0, 1, 0);
+
+			for (i = 0; i < imax - 1; i++) {
+				glNormal3f(vertex[i][0], 0.0, vertex[i][2]);
+				glVertex3f(center[0] + r * vertex[i][0], 0.0, center[2] + r * vertex[i][2]);
+				glVertex3f(center[0] + r * vertex[i][0], 1.0, center[2] + r * vertex[i][2]);
+
+				glNormal3f(vertex[i + 1][0], 0.0, vertex[i + 1][2]);
+				glVertex3f(center[0] + r * vertex[i + 1][0], 1.0, center[2] + r * vertex[i + 1][2]);
+				glVertex3f(center[0] + r * vertex[i + 1][0], 0.0, center[2] + r * vertex[i + 1][2]);
+			}
+
+		glEnd();
+
+	glEndList();
+
+	return list;
+}
+
+
 static GLuint cube_display_list(void)
 {
 	GLuint list;
@@ -272,7 +341,7 @@ static void reshape(int w, int h)
 
 static void display(void)
 {
-	joint_adjust_random(&model_bulky);
+//	joint_adjust_random(&model_bulky);
 	joint_adjust_random(&model_sticky);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -515,7 +584,8 @@ int main(int argc, char *argv[])
 
 	glShadeModel(GL_SMOOTH);
 
-	cube_list = cube_display_list();
+//	cube_list = cube_display_list();
+	cube_list = cylinder_display_list(5.0);
 	frame_list = frame_display_list();
 
 	drawing_init();

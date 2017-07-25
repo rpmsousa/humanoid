@@ -1,0 +1,114 @@
+1. Improve data structures:
+
+model -> the assemble of connected pieces/elements/.../particles/objects
+joints -> how the pieces are connected and what's their relative position
+solid -> physical description of each piece
+
+maybe:
+
+
+struct model {
+	elements[] -> array of all elements that make up the model
+	physics -> all the physical properties of the model (which coordinates?)
+}
+
+struct physics {
+	t -> possible matrix transformation between "global" coordinates and the coordinates used bellow (whatever they may be)
+	mass
+	pos
+	vel
+	linear momentum
+	force
+
+	inertia moment
+	ang_pos
+	ang_vel
+	ang_momentum
+	torque
+ 
+	kinetic energy
+}
+
+struct element {
+	joints[] -> array of joints attached to this element
+	shape -> geometric properties of this element (how to draw it)
+	physics -> all the physical properties of the element (which coordinates?)
+}
+
+struct joint {
+	element * -> element attached to this joint
+	coordinates -> joint relative position
+}
+
+shape {
+	density
+	generic_shape * -> generic properties for this shape (with parameters)
+}
+
+generic_shape {
+	display list
+	volume
+	mass -> callback to cal
+}
+
+
+2. Add new geometric shapes:
+- ellipsoids
+- elliptic cylinder
+- frustrum
+
+
+3. Improve the physics
+
+The most generic approach is a system of N particles.
+This is modeled with all particle positions, velocities and forces (N-1 forces applied to each particle).
+
+Next step is to use solid shapes instead of particles, i.e, a system of N solids.
+For each solid we use center of mass + movement around the center of mass:
+total mass, center of mass position, linear velocity of the center of mass, linear momentum, total force
+inertia momentum, angular position, angular velocity, angular momentum, total torque
+
+The system properties are just a sum of all the invidual solid properties.
+If no external forces are applied then we get linear and angular momentum conservation.
+
+Next step is to do all this without specifying _any_ of the internal forces directly.
+We only specify the positions at different points in time. The velocity is then deduced from that.
+It should be sufficient to consider constant velocity between positions with a infinite accelaration
+(during an infinitesimal period) at the begining and end of motion.
+
+Next step is to take into accound that some elements relative positions are constant.
+If they are all constant the whole model is a solid body, and it's sufficient to consider the model
+linear and angular velocity.
+
+If there is a single joint moving, we basically get the movement of two complex solid bodies.
+If no external forces are applied, if one of the bodies move left the other moves right,
+if one rotates left the other rotates right.
+
+If M joints are moving we will have to model M + 1 solids.
+
+Again, the movement of the joints is hardcoded.
+
+Now, what is the best way to model this? Knowing that as time moves on, the number of joints
+moving and how they move will also change?
+
+Analytically, constructing the Lagrangian and incorporating the joint restrictions into the generalized coordinates,
+would be a way to go (with choice of coordinates relative to the joint position?).
+- If the joint is moving itself, then it's not an inertial frame... does it still work?
+
+
+
+- Velocity/momentum for each element (based on harcoded movements)
+- Momentum conservation based on sum of momentums
+- Kinetic energy for each element
+- Internal forces for each element
+
+
+Right now we don't take into account relative velocities of the different elements, and only
+measure relative positions at different moments in time (center of mass and inertia momentum),
+so we endup violating linear/angular momentum. If one element starts moving left, the rest needs to move right,...
+If we stop treating the system as a solid body, then we need to consider the forces between connected elements...
+In principle considering the velocities is enough for momentum conservation, so if everything moves with constant velocity,
+and with "infinite" accelaration at the start/end of the movement...
+
+- Add support for external forces, namely air drag.
+- Add center of mass movement equation

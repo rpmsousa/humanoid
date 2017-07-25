@@ -144,7 +144,7 @@ void model_movement(struct model *m)
 
 	invert(&m->inertia, &t);
 
-//	print("inertia", &m->inertia);
+	print("inertia", &m->inertia);
 //	print("inertia invert", &t);
 
 	product(&t, &m->angular_momentum, &m->angular_velocity);
@@ -156,13 +156,13 @@ void model_movement(struct model *m)
 
 	model_momentum(m);
 
-//	print("ang m", &m->angular_momentum);
-//	print("ang v", &m->angular_velocity);
+	print("ang m", &m->angular_momentum);
+	print("ang v", &m->angular_velocity);
 //	print("cm", &m->cm);
 
 	product(&m->inertia, &m->angular_velocity, &v);
 	product(&v, &m->angular_velocity, &e);
-//	printf("energy %f\n", e/2.0);
+	printf("energy %f\n", e/2.0);
 }
 
 void model_init(struct model *m, float x)
@@ -172,7 +172,7 @@ void model_init(struct model *m, float x)
 
 	m->velocity[0] = 1.0;
 
-	m->angular_velocity[0] = 90.0;
+	m->angular_velocity[0] = 0.0;
 	m->angular_velocity[1] = 0.0;
 	m->angular_velocity[2] = 0.0;
 

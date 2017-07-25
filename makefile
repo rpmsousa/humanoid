@@ -1,19 +1,18 @@
-all: skeleton
-#test
+all: humanoid test
 
 CFLAGS=-O2 -Wall
 LDFLAGS=-lglut -lm -lGLU
 CC=gcc
 
-SRC = skeleton.c model.c model_bulky.c model_sticky.c model_simple.c movement.c linear.c physics.c
+SRC = main.c model.c model_bulky.c model_sticky.c model_simple.c movement.c linear.c physics.c
 HDR = model.h movement.h linear.h physics.h
 
-test: linear.c linear.h
-	$(CC) $(CFLAGS) -o test linear.c $(LDFLAGS)
+test: linear.c test.c linear.h
+	$(CC) $(CFLAGS) -o $@ test.c linear.c $(LDFLAGS)
 
 
-skeleton: $(SRC) $(HDR)
-	$(CC) $(CFLAGS) -o skeleton $(SRC) $(LDFLAGS)
+humanoid: $(SRC) $(HDR)
+	$(CC) $(CFLAGS) -o $@ $(SRC) $(LDFLAGS)
 
 clean:
-	rm skeleton
+	rm -f humanoid test
