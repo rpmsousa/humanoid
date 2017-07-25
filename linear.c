@@ -2,6 +2,30 @@
 #include <math.h>
 #include "linear.h"
 
+vec3 vec3_null = {0.0, 0.0, 0.0};
+vec4 vec4_null = {0.0, 0.0, 0.0, 0.0};
+
+vec3 vec3_unit_x = {1.0, 0.0, 0.0};
+vec3 vec3_unit_y = {0.0, 1.0, 0.0};
+vec3 vec3_unit_z = {0.0, 0.0, 1.0};
+
+vec4 vec4_unit_x = {1.0, 0.0, 0.0, 1.0};
+vec4 vec4_unit_y = {0.0, 1.0, 0.0, 1.0};
+vec4 vec4_unit_z = {0.0, 0.0, 1.0, 1.0};
+
+mat3 mat3_unit = {
+	1.0, 0.0, 0.0,
+	0.0, 1.0, 0.0,
+	0.0, 0.0, 1.0
+};
+
+mat4 mat4_unit = {
+	1.0, 0.0, 0.0, 0.0,
+	0.0, 1.0, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0, 1.0
+};
+
 void print_vec3(const char *name, vec3 *v)
 {
 	if (name)
@@ -102,8 +126,8 @@ void rotation_mat3(mat3 *m, scalar a, scalar u0, scalar u1, scalar u2)
 void rotation_mat4(mat4 *m, scalar a, scalar u0, scalar u1, scalar u2)
 {
 	vec3 u = {u0, u1, u2};
-	float sin = sinf(a * M_PI / 180.0f);
-	float cos = cosf(a * M_PI / 180.0f);
+	float sin = sinf((a * M_PI) / 180.0f);
+	float cos = cosf((a * M_PI) / 180.0f);
 
 	normalize_vec3(&u);
 

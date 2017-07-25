@@ -3,43 +3,141 @@
 #include <GL/glu.h>
 #include <math.h>
 #include "linear.h"
-#include "model.h"
-#include "movement.h"
+#include "model2.h"
 #include "draw.h"
 
-/*
-(x, y, z)
-(r, t, p)
-r = sqrt(x*x + y*y + z*z);
-cos t = z/r;
-cos p = x/sqrt(x*x + y*y);
-tan p = y/x;
-
-z = r * cos(t);
-y = r * sin(t) * sin(p);
-x = r * sin(t) * cos(p);
-*/
+GLuint frame_list;
 
 double cz = -10.0;
 double cy = 0.0;
 double cx = 0.0;
 
-double tz = 0.0;
 double ty = 0.0;
-double tx = 0.0;
 
-GLuint cube_list;
-GLuint frame_list;
+struct model m = {
+	.elements = 6,
+	.element = {
+		[0] = {
+			.parent = NULL,
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1},
+		},
+	
+		[1] = {
+			.parent = &m.element[0],
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				5, 0, 0, 1},
+		},
 
-void bone_draw(struct bone *b)
+		[2] = {
+			.parent = &m.element[1],
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				5, 0, 0, 1},
+		},
+
+		[3] = {
+			.parent = &m.element[1],
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				5, 5, 0, 1},
+		},
+
+		[4] = {
+			.parent = &m.element[2],
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				5, 0, 0, 1},
+		},
+		
+		[5] = {
+			.parent = &m.element[4],
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				5, 0, 0, 1},
+		},
+	},
+};
+
+void element_print(struct element *b)
 {
+	printf("%p\n", b);
+
+//	print("position", &b->r);
+//	print("absolute position", &b->_r);
+
+	print("transform", &b->tr);
+	print("absolute transform", &b->_tr);
+	
+//	print("velocity", b->vt);
+//	print("absolute velocity", b->_vt);
+}
+
+scalar t = 0.0;
+
+void element_draw(struct element *e, scalar t)
+{
+	vec4 v;
+
 	glPushMatrix();
 
-	glMultMatrixf(b->s.t_abs);
+//	element_print(e);
 
-	glScaled(b->dx, b->dy, b->dz);
+//	vector_draw(&e->_r);
 
-	glCallList(cube_list);
+	glMultMatrixf(e->_tr);
+
+#if 1
+	/* x axis relative velocity */
+//	product_mat4_vec4(&e->tv, &vec4_unit_x, &v);
+
+//	draw_vec4(&vec4_unit_x, &v);
+
+	/* x axis absolute velocity */
+	velocity(e, &vec4_unit_x, &v);
+
+	draw_vec4(&vec4_unit_x, &v);
+#endif
+
+#if 1
+	/* y axis relative velocity */
+//	product_mat4_vec4(&e->tv, &vec4_unit_y, &v);
+
+//	draw_vec4(&vec4_unit_y, &v);
+
+	/* y axis absolute velocity */
+	velocity(e, &vec4_unit_y, &v);
+
+	draw_vec4(&vec4_unit_y, &v);
+#endif
+
+#if 1
+	/* z axis relative velocity */
+//	product_mat4_vec4(&e->tv, &vec4_unit_z, &v);
+
+//	draw_vec4(&vec4_unit_z, &v);
+
+	/* z axis absolute velocity */
+	velocity(e, &vec4_unit_z, &v);
+
+	draw_vec4(&vec4_unit_z, &v);
+#endif
+
+	glCallList(frame_list);
+
+	position_relative_update(e, &t);
+
+//	glScaled(b->dx, b->dy, b->dz);
+
+//	glCallList(cube_list);
 
 	glPopMatrix();
 }
@@ -48,53 +146,14 @@ static void model_draw(struct model *m)
 {
 	int i;
 
-	glPushMatrix();
-
-	model_update_shape(m);
-
-	/* translate to center of mass coordinates */
-	glTranslatef(m->pos[0], m->pos[1], m->pos[2]);
-
-	glRotatef(ty, 0.0, 1.0, 0.0);
+	t += 0.1;
 
 	glPushMatrix();
 
-	/* rotate about the center of mass */
-	glMultMatrixf(m->angular_pos);
+	for (i = 0; i < m->elements; i++)
+		element_draw(&m->element[i], t);
 
-	glTranslatef(-m->cm[0], -m->cm[1], -m->cm[2]);
-
-	for (i = 0; i < m->bones; i++)
-		bone_draw(&m->bone[i]);
-
-	glPopMatrix();
-
-	glColor3f(1, 0, 0);
-	vector_draw(&m->momentum);
-
-	glColor3f(0, 1, 0);
-	vector_draw(&m->angular_velocity);
-
-	glColor3f(0, 0, 1);
-	vector_draw(&m->angular_momentum);
-
-	model_movement(m);
-
-	glPopMatrix();
-}
-
-
-void cube_draw(vec3 p, float w, float h)
-{
-	glPushMatrix();
-
-	glTranslatef(p[0], p[1], p[2]);
-
-	glTranslatef(-w/2.0, -h/2.0, -w/2.0);
-
-	glScaled(w, h, w);
-
-	glCallList(cube_list);
+	position_absolute_update(&m->element[0]);
 
 	glPopMatrix();
 }
@@ -120,79 +179,22 @@ static void reshape(int w, int h)
 
 static void display(void)
 {
-//	joint_adjust_random(&model_bulky);
-	joint_adjust_random(&model_sticky);
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glLoadIdentity();
 
 	glTranslatef(cx, cy, cz);
 
-	model_draw(&model_bulky);
+	glRotatef(ty, 0.0, 1.0, 0.0);
 
-	model_draw(&model_sticky);
-
-//	model_draw(&model_simple);
+	model_draw(&m);
 
 	glutSwapBuffers();
 }
 
 static void keyboard (unsigned char key, int x, int y)
 {
-	struct model *m = &model_bulky;
-	float d_arm[3] = {0, 0, 0};
-	float d_leg[3] = {0, 0, 0};
-
 	switch (key) {
-	case 'y':
-		d_arm[0] = 1.0;
-		break;
-
-	case 'u':
-		d_arm[0] = -1.0;
-		break;
-
-	case 'h':
-		d_arm[1] = 5.0;
-		break;
-
-	case 'j':
-		d_arm[1] = -5.0;
-		break;
-
-	case 'n':
-		d_arm[2] = 5.0;
-		break;
-
-	case 'm':
-		d_arm[2] = -5.0;
-		break;
-
-	case 'i':
-		d_leg[0] = 1.0;
-		break;
-
-	case 'o':
-		d_leg[0] = -1.0;
-		break;
-
-	case 'k':
-		d_leg[1] = 5.0;
-		break;
-
-	case 'l':
-		d_leg[1] = -5.0;
-		break;
-
-	case ',':
-		d_leg[2] = 5.0;
-		break;
-
-	case '.':
-		d_leg[2] = -5.0;
-		break;
-
 	case 'w':
 		cy += 0.1;
 		break;
@@ -217,23 +219,17 @@ static void keyboard (unsigned char key, int x, int y)
 		cz += 0.1;
 		break;
 
-	case 'r':
+	case 'z':
 		ty += 5;
 		break;
 
-	case 't':
+	case 'c':
 		ty -= 5;
 		break;
 
 	default:
 		break;
 	}
-
-	joint_adjust(&m->bone[LEFT_ARM], d_arm[0], d_arm[1], d_arm[2]);
-	joint_adjust(&m->bone[RIGHT_ARM], d_arm[0], d_arm[1], d_arm[2]);
-
-	joint_adjust(&m->bone[LEFT_LEG], d_leg[0], d_leg[1], d_leg[2]);
-	joint_adjust(&m->bone[RIGHT_LEG], d_leg[0], d_leg[1], d_leg[2]);
 }
 
 static void lighting_init(void)
@@ -348,8 +344,6 @@ int main(int argc, char *argv[])
 
 	glutCreateWindow("Skeleton");
 
-//	linear_test();
-
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
@@ -357,15 +351,7 @@ int main(int argc, char *argv[])
 
 	dump_info();
 
-	model_init(&model_bulky, -1.0);
-	model_init(&model_sticky, 1.0);
-	model_init(&model_simple, 3.0);
-
 	glShadeModel(GL_SMOOTH);
-
-//	cube_list = cube_display_list();
-	cube_list = cylinder_display_list(5.0);
-	frame_list = frame_display_list();
 
 	drawing_init();
 
@@ -374,6 +360,25 @@ int main(int argc, char *argv[])
 	lighting_init();
 
 	antialiasing_init();
+
+	frame_list = frame_display_list();
+
+//	rotate(&m.element[0].tr, 30, 0, 1, 0);
+
+//	rotate(&m.element[1].tr, 30, 0, 1, 0);
+
+	rotate(&m.element[2].tr, 30, 0, 1, 0);
+
+//	rotate(&m.element[4].tr, 30, 0, 1, 0);
+
+//	rotate(&m.element[5].tr, 30, 0, 1, 0);
+
+	m.element[0].a[0] = 0.0;
+	m.element[1].a[0] = 1.0;
+	m.element[2].a[1] = 1.0;
+	m.element[4].a[0] = -1.0;
+
+	model_init(&m);
 
 	glutMainLoop();
 
