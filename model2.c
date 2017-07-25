@@ -11,7 +11,7 @@ static void model_velocity_init(struct element *e)
 	for (entry = list_first(&e->childs); entry != &e->childs; entry = list_next(entry)) {
 		child = container_of(entry, struct element, list);
 
-		velocity_init(child);
+		model_velocity_init(child);
 	}
 }
 
@@ -25,7 +25,7 @@ static void model_position_init(struct element *e)
 	for (entry = list_first(&e->childs); entry != &e->childs; entry = list_next(entry)) {
 		child = container_of(entry, struct element, list);
 
-		position_init(child);
+		model_position_init(child);
 	}
 }
 
@@ -43,6 +43,8 @@ void model_init(struct model *m)
 
 	for (i = 0; i < m->elements; i++) {
 		struct element *e = &m->element[i];
+
+		e->index = i;
 
 		list_head_init(&e->childs);
 	}
@@ -66,7 +68,7 @@ static void model_velocity_update(struct element *e)
 	for (entry = list_first(&e->childs); entry != &e->childs; entry = list_next(entry)) {
 		child = container_of(entry, struct element, list);
 
-		velocity_update(child);
+		model_velocity_update(child);
 	}
 }
 
@@ -80,7 +82,7 @@ static void model_position_update(struct element *e, float dt)
 	for (entry = list_first(&e->childs); entry != &e->childs; entry = list_next(entry)) {
 		child = container_of(entry, struct element, list);
 
-		position_update(child, dt);
+		model_position_update(child, dt);
 	}
 }
 

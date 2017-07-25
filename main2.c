@@ -15,7 +15,7 @@ double cx = 0.0;
 double ty = 0.0;
 
 struct model m = {
-	.elements = 2,
+	.elements = 3,
 	.element = {
 		[0] = {
 			.parent = NULL,
@@ -34,7 +34,7 @@ struct model m = {
 		},
 
 		[2] = {
-			.parent = &m.element[0],
+			.parent = &m.element[1],
 			.tr = {1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 0, 1, 0,
@@ -86,110 +86,58 @@ scalar t = 0.0;
 void element_draw(struct element *e)
 {
 	vec4 v;
-	mat4 _inv_tr;
-	vec4 ri, r;
-
-	transpose(&e->_tr, &_inv_tr);
-	_inv_tr[3] = 0.0;
-	_inv_tr[7] = 0.0;
-	_inv_tr[11] = 0.0;
-	_inv_tr[15] = 1.0;
 
 	glPushMatrix();
 
 	/* All drawing coordinates are local */
 	glMultMatrixf(e->_tr);
 
-	if (e->parent) {
-		scalar a = -1;
-
-		/* Element relative position */
-		parent2local(e, &vec4_null, &ri); /* parent origin in local coordinates */
-
-		product_c_vec4(&a, &ri, &r);
-		sum(&vec4_null, &r, &r);
-
-		draw_vec4(&ri, &r);
-
-		/* Element relative velocity */
-		local2parent(e, &vec4_null, &r);
-		_velocity_local(e->parent, &r, &v);
-		parent2local(e, &v, &v);
-		draw_vec4(&vec4_null, &v);
-	}
-
-	/* Local velocity */
-	_velocity_local(e, &vec4_unit_x, &v);
+	/* local velocity */
+	v[0] = e->_tv[0];
+	v[1] = e->_tv[1];
+	v[2] = e->_tv[2];
+	v[3] = e->_tv[3];
 
 	draw_vec4(&vec4_unit_x, &v);
 
-	_velocity_local(e, &vec4_unit_y, &v);
+	v[0] = e->_tv[4];
+	v[1] = e->_tv[5];
+	v[2] = e->_tv[6];
+	v[3] = e->_tv[7];
 
 	draw_vec4(&vec4_unit_y, &v);
 
-	_velocity_local(e, &vec4_unit_z, &v);
+	v[0] = e->_tv[8];
+	v[1] = e->_tv[9];
+	v[2] = e->_tv[10];
+	v[3] = e->_tv[11];
 
 	draw_vec4(&vec4_unit_z, &v);
-
 #if 0
-	if (e->parent) {
-		product(&e->_tr, &vec4_unit_x, &v); /* parent coordinates */
-		_velocity_local(e->parent, &v, &v);
-		parent2local(e, &v, &v);
-		draw_vec4(&vec4_unit_x, &v);
-
-		product(&e->_tr, &vec4_null, &v); /* parent coordinates */
-		_velocity_local(e->parent, &v, &v);
-		parent2local(e, &v, &v);
-		draw_vec4(&vec4_null, &v);
-	}
-#if 0
-	/* x axis relative velocity */
-//	product(&e->tv, &vec4_unit_x, &v);
-
-//	draw(&vec4_unit_x, &v);
-
-	/* x axis absolute velocity */
-	velocity(e, &vec4_unit_x, &v);
-
-	product(&_inv_tr, &v, &v);
+	v[0] = e->__tv[0];
+	v[1] = e->__tv[1];
+	v[2] = e->__tv[2];
+	v[3] = e->__tv[3];
 
 	draw_vec4(&vec4_unit_x, &v);
-#endif
 
-#if 0
-	/* y axis relative velocity */
-//	product(&e->tv, &vec4_unit_y, &v);
 
-//	draw(&vec4_unit_y, &v);
-
-	/* y axis absolute velocity */
-	velocity(e, &vec4_unit_y, &v);
-
-	product(&_inv_tr, &v, &v);
+	v[0] = e->__tv[4];
+	v[1] = e->__tv[5];
+	v[2] = e->__tv[6];
+	v[3] = e->__tv[7];
 
 	draw_vec4(&vec4_unit_y, &v);
-#endif
 
-#if 0
-	/* z axis relative velocity */
-//	product(&e->tv, &vec4_unit_z, &v);
-
-//	draw(&vec4_unit_z, &v);
-
-	/* z axis absolute velocity */
-	velocity(e, &vec4_unit_z, &v);
-
-	product(&_inv_tr, &v, &v);
+	v[0] = e->__tv[8];
+	v[1] = e->__tv[9];
+	v[2] = e->__tv[10];
+	v[3] = e->__tv[11];
 
 	draw_vec4(&vec4_unit_z, &v);
 #endif
-#endif
+
 	glCallList(frame_list);
-
-//	glScaled(b->dx, b->dy, b->dz);
-
-//	glCallList(cube_list);
 
 	glPopMatrix();
 }
@@ -426,10 +374,17 @@ int main(int argc, char *argv[])
 //	rotate(&m.element[5].tr, 30, 0, 1, 0);
 
 	m.element[0].a[0] = 0.0;
-	m.element[0].a[1] = 1.1; /* angular velocity about the y axis */
+	m.element[0].a[1] = 0.5; /* angular velocity about the y axis */
+	m.element[0].a[2] = 0.0;
 
-	m.element[1].a[2] = 1.2; /* angular velocity about the x axis */
-	m.element[2].a[0] = 0.0;
+	m.element[1].a[0] = 0.0;
+	m.element[1].a[1] = 1.0;
+	m.element[1].a[2] = 0.0; /* angular velocity about the z axis */
+
+	m.element[2].a[0] = 1.0;
+	m.element[2].a[1] = 0.0;
+	m.element[2].a[2] = 0.0;
+
 	m.element[4].a[0] = 0.0;
 
 	model_init(&m);

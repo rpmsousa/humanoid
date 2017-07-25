@@ -181,24 +181,69 @@ void position_init(struct element *e)
 
 void velocity_update(struct element *e)
 {
+	struct element *p = e->parent;
+	mat4 inv_tr;
+	mat4 _r;
+
+	invert_mat4(&e->tr, &inv_tr);
+
+	/* Basis unit vectors, in local coordinates */
+	assign(&mat4_unit, &_r);
+	_r[3] = _r[7] = _r[11] = 1.0;
+	_r[15] = 0.0;
+
+	/* Velocity of each basis vector, in local coordinates */
+	product(&e->tv, &_r, &e->_tv); 
+	e->_tv[12] = e->_tv[13] = e->_tv[14] = e->_tv[15] = 0.0;
+
+	print("unit position", &_r);
+	print("velocity matrix", &e->tv);
+	print("unit velocity", &e->_tv);
+
+	/* Basis unit vectors velocity */
+	if (p) {
+		mat4 _tv;
+
+		/* Basis velocity due to parent basis velocity */
+		product(&e->tr, &_r, &_r);
+		_r[12] = _r[13] = _r[14] = _r[15] = 0.0;
+		if (e->index == 2) {
+			print("transform", &e->tr);
+			print("position", &_r);
+
+		print("parent velocity", &p->___tv);
+		}
 	
+		/* Linear combination of basis vector velocity */
+		product(&p->___tv, &_r, &e->__tv);
+		if (e->index == 2)
+		print("velocity", &e->__tv);
+
+		product(&inv_tr, &e->__tv, &e->__tv);
+
+		sum(&e->_tv, &e->__tv, &e->___tv);
+		if (e->index == 2) {
+			print("basis velocity", &e->__tv);
+			print("local velocity", &e->_tv);
+
+			print("total velocity", &e->___tv);
+		}
+
+	} else {
+		assign(&e->_tv, &e->__tv);
+		assign(&e->__tv, &e->___tv);
+	}
 }
 
 void velocity_init(struct element *e)
 {
 	struct element *p = e->parent;
 
-	/* Relative velocity */
+	/* Basis velocity, in parent coordinates */
 	cross_product_mat4(&e->a, &e->tv);
 
 	print("angular velocity", &e->a);
 	print("velocity", &e->tv);
 
-	/* Basis unit vectors velocity */
-	if (p) {
-
-	} else {
-
-
-	}
+	velocity_update(e);
 }

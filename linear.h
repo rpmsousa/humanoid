@@ -38,7 +38,9 @@ extern vec3 vec3_unit_z;
 extern vec4 vec4_unit_x;
 extern vec4 vec4_unit_y;
 extern vec4 vec4_unit_z;
+extern mat3 mat3_null;
 extern mat3 mat3_unit;
+extern mat4 mat4_null;
 extern mat4 mat4_unit;
 
 void print_vec3(const char *name, vec3 *v);
