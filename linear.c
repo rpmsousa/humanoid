@@ -154,11 +154,12 @@ void rotation_mat3(mat3 *m, scalar a, scalar u0, scalar u1, scalar u2)
 	(*m)[8] = cos + u[2] * u[2] * (1.0f - cos);
 }
 
+/* Return rotation matrix around axis (u0, u1, u2) of angle "a" degrees. */
 void rotation_mat4(mat4 *m, scalar a, scalar u0, scalar u1, scalar u2)
 {
 	vec3 u = {u0, u1, u2};
-	float sin = sinf((a * M_PI) / 180.0f);
-	float cos = cosf((a * M_PI) / 180.0f);
+	float sin = sinf(degrees_2_radians(a));
+	float cos = cosf(degrees_2_radians(a));
 
 	normalize_vec3(&u, &u);
 

@@ -52,6 +52,11 @@ extern mat3 mat3_unit;
 extern mat4 mat4_null;
 extern mat4 mat4_unit;
 
+static inline scalar degrees_2_radians(scalar d)
+{
+	return (d * M_PI) / 180.0;
+}
+
 void print_vec3(const char *name, vec3 *v);
 void print_vec4(const char *name, vec4 *v);
 void print_mat3(const char *name, mat3 *m);
