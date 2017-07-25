@@ -17,6 +17,7 @@
 
  det(A) = +- 1
 */
+extern void choice_error(void);
 
 #define FLOAT float
 
@@ -50,11 +51,7 @@ void print_mat4(const char *name, mat4 *m);
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec4 *), print_vec4(name, (void *)m),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), print_mat3(name, (void *)m),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), print_mat4(name, (void *)m),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const vec3 *), print_vec3(name, (void *)m),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const vec4 *), print_vec4(name, (void *)m),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat3 *), print_mat3(name, (void *)m),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat4 *), print_mat4(name, (void *)m),	\
-		(void)0))))))))
+		choice_error()))))
 
 void identity_mat3(mat3 *m);
 void identity_mat4(mat4 *m);
@@ -62,7 +59,7 @@ void identity_mat4(mat4 *m);
 #define identity(m)	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), identity_mat3((void *)m),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), identity_mat4((void *)m),	\
-		(void)0))
+		choice_error()))
 
 static inline void mat4_2_mat3(mat4 *m, mat3 *n)
 {
@@ -134,14 +131,10 @@ static inline void assign_mat4(mat4 *m, mat4 *n)
 
 #define assign(m, n)	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec3 *), assign_vec3((void *)m, (void *)n),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const vec3 *), assign_vec3((void *)m, (void *)n),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec4 *), assign_vec4((void *)m, (void *)n),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const vec4 *), assign_vec4((void *)m, (void *)n),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), assign_mat3((void *)m, (void *)n),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat3 *), assign_mat3((void *)m, (void *)n),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), assign_mat4((void *)m, (void *)n),	\
-	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat4 *), assign_mat4((void *)m, (void *)n),	\
-		(void)0))))))))
+		choice_error()))))
 
 
 static inline void sum_vec3(vec3 *u, vec3 *v, vec3 *w)
@@ -202,7 +195,7 @@ static inline void sum_mat4(mat4 *m, mat4 *n, mat4 *l)
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec4 *), sum_vec4((void *)m, (void *)n, (void *)o),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), sum_mat3((void *)m, (void *)n, (void *)o),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), sum_mat4((void *)m, (void *)n, (void *)o),	\
-	(void)0))))
+	choice_error()))))
 
 static inline void product_mat3(mat3 *m, mat3 *n, mat3 *l)
 {
@@ -409,24 +402,24 @@ static inline void product_vec4(vec4 *u, vec4 *v, scalar *c)
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), vec4 *), product_c_vec4((void *)m, (void *)n, (void *)o),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), mat3 *), product_c_mat3((void *)m, (void *)n, (void *)o),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), mat4 *), product_c_mat4((void *)m, (void *)n, (void *)o),	\
-		(void)0)))),	\
+		choice_error())))),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), vec3 *), product_mat3_vec3((void *)m, (void *)n, (void *)o),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), mat3 *), product_mat3((void *)m, (void *)n, (void *)o),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), mat4 *), product_mat3_mat4((void *)m, (void *)n, (void *)o),	\
-		(void)0))),	\
+		choice_error()))),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), vec3 *), product_mat4_vec3((void *)m, (void *)n, (void *)o),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), vec4 *), product_mat4_vec4((void *)m, (void *)n, (void *)o),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), mat4 *), product_mat4((void *)m, (void *)n, (void *)o),	\
-		(void)0))),	\
+		choice_error()))),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec3 *),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), vec3 *), product_vec3((void *)m, (void *)n, (void *)o),	\
-		(void)0),	\
+		choice_error()),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec4 *),	\
 		__builtin_choose_expr(__builtin_types_compatible_p(typeof(n), vec4 *), product_vec4((void *)m, (void *)n, (void *)o),	\
-		(void)0),	\
-		(void)0)))))
+		choice_error()),	\
+		choice_error())))))
 
 
 /* constructs cross produt matrix M from a vector m so that
@@ -451,16 +444,46 @@ static inline void cross_product(vec3 *u, vec3 *v, vec3 *w)
 	/* FIXME */ /* vk[0] = vi[0] * vj[0] + vi[1] * vj[1] + vi[2] + vj[2]; */
 }
 
+static inline scalar det_mat2(mat2 *m)
+{
+	return (*m)[0] * (*m)[3] - (*m)[1] * (*m)[2];
+}
+
+static inline scalar _det_mat2(scalar m0, scalar m1, scalar m2, scalar m3)
+{
+	return  m0 * m3 - m1 * m2;
+}
+
 static inline scalar det_mat3(mat3 *m)
 {
-	return  (*m)[0] * (*m)[4] * (*m)[8] + (*m)[3] * (*m)[2] * (*m)[7] + (*m)[6] * (*m)[1] * (*m)[5]
-		- (*m)[6] * (*m)[2] * (*m)[4] - (*m)[3] * (*m)[1] * (*m)[8] - (*m)[0] * (*m)[5] * (*m)[7];
+	return  (*m)[0] * _det_mat2((*m)[4], (*m)[5], (*m)[7], (*m)[8]) -
+		(*m)[3] * _det_mat2((*m)[1], (*m)[2], (*m)[7], (*m)[8]) +
+		(*m)[6] * _det_mat2((*m)[1], (*m)[2], (*m)[4], (*m)[5]);
+}
+
+static inline scalar _det_mat3(scalar m0, scalar m1, scalar m2, scalar m3, scalar m4, scalar m5, scalar m6, scalar m7, scalar m8)
+{
+	return  m0 * _det_mat2(m4, m5, m7, m8) -
+		m3 * _det_mat2(m1, m2, m7, m8) +
+		m6 * _det_mat2(m1, m2, m4, m5);
+}
+
+static inline scalar det_mat4(mat4 *m)
+{
+	return  (*m)[0]  * _det_mat3((*m)[5], (*m)[6], (*m)[7], (*m)[9], (*m)[10], (*m)[11], (*m)[13], (*m)[14], (*m)[15]) -
+		(*m)[4]  * _det_mat3((*m)[1], (*m)[2], (*m)[3], (*m)[9], (*m)[10], (*m)[11], (*m)[13], (*m)[14], (*m)[15]) +
+		(*m)[8]  * _det_mat3((*m)[1], (*m)[2], (*m)[3], (*m)[5], (*m)[6], (*m)[7], (*m)[13], (*m)[14], (*m)[15]) -
+		(*m)[12] * _det_mat3((*m)[1], (*m)[2], (*m)[3], (*m)[5], (*m)[6], (*m)[7], (*m)[9], (*m)[10], (*m)[11]);
 }
 
 #define det(m)	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat2 *), det_mat2((void *)m),	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat2 *), det_mat2((void *)m),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), det_mat3((void *)m),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat3 *), det_mat3((void *)m),	\
-		(void)0))
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), det_mat4((void *)m),	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), const mat4 *), det_mat4((void *)m),	\
+	choice_error()))))))
 
 static inline scalar tr_mat3(mat3 *m)
 {
@@ -475,7 +498,7 @@ static inline scalar tr_mat4(mat4 *m)
 #define tr(m)	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), tr_mat3(m),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), tr_mat4(m),	\
-		(void)0))
+		choice_error()))
 
 static inline void transpose_mat3(mat3 *m, mat3 *n)
 {
@@ -518,7 +541,7 @@ static inline void transpose_mat4(mat4 *m, mat4 *n)
 	l[12] = (*m)[3];
 	l[13] = (*m)[7];
 	l[14] = (*m)[11];
-	l[15] = (*m)[14];
+	l[15] = (*m)[15];
 
 	assign(&l, n);
 };
@@ -526,7 +549,7 @@ static inline void transpose_mat4(mat4 *m, mat4 *n)
 #define transpose(m, n)	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), transpose_mat3((void *)m, (void *)n),	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), transpose_mat4((void *)m, (void *)n),	\
-	(void)0))
+	choice_error()))
 
 static inline void translate(mat4 *m, scalar t0, scalar t1, scalar t2)
 {
@@ -549,6 +572,5 @@ void invert_mat3(mat3 *m, mat3 *n);
 
 #define invert(m, n)	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), invert_mat3((void *)m, (void *)n),	\
-	(void)0)
-
+	choice_error())
 #endif /* _LINEAR_H_ */
