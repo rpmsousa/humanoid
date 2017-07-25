@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include <sys/time.h>
+#ifdef USE_GLUT
 #include <GL/glut.h>
+#else
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <GL/glx.h>
+//#include <unistd.h>
+#endif
 #include <GL/glu.h>
 #include <math.h>
 #include "linear.h"
@@ -212,7 +219,7 @@ static void print_fps(void)
 	}
 }
 
-static void display(void)
+static void display_func(void)
 {
 	struct timeval tnow;
 
@@ -237,7 +244,10 @@ static void display(void)
 
 	model_update(&m, t);
 
+#ifdef USE_GLUT
 	glutSwapBuffers();
+#else
+#endif
 }
 
 static void keyboard (unsigned char key, int x, int y)
@@ -319,7 +329,7 @@ static void antialiasing_init(void)
 {
 	glEnable(GL_POINT_SMOOTH);
 	glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_POLYGON_SMOOTH);
+//	glEnable(GL_POLYGON_SMOOTH);
 
 	glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -397,23 +407,95 @@ static void dump_info(void)
 			glIsEnabled(GL_SAMPLE_COVERAGE));
 }
 
+static void keypress_event_handler(XKeyEvent *xevent)
+{
+	printf("%u %c\n", xevent->keycode, (int)XLookupKeysym(xevent, 0));
+
+	keyboard(XLookupKeysym(xevent, 0), xevent->x, xevent->y);
+}
+
+static void expose_event_handler(XExposeEvent *xevent)
+{
+	XWindowAttributes       gwa;
+
+	if (!xevent->count) {
+		//XGetWindowAttributes(xevent->display, xevent->window, &gwa);
+		//reshape(gwa.width, gwa.height);
+		display_func();
+		glXSwapBuffers(xevent->display, xevent->window);
+	}
+}
+
+static void event_handler(Display *display, Window window)
+{
+	XEvent xevent;
+
+	if (XCheckWindowEvent(display, window, KeyPressMask, &xevent)) {
+
+		switch (xevent.type) {
+		case KeyPress:
+			keypress_event_handler(&xevent.xkey);
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+#define XPOS	100
+#define YPOS	100
+#define XSIZE	1024
+#define YSIZE	1024
+
 int main(int argc, char *argv[])
 {
+#ifdef USE_GLUT
 	glutInit(&argc, argv);
 
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA | GLUT_ALPHA);
 
-	glutInitWindowPosition(100,100);
+	glutInitWindowPosition(XPOS, YPOS);
 
-	glutInitWindowSize(1024, 1024);
+	glutInitWindowSize(XSIZE, YSIZE);
 
 	glutCreateWindow("Skeleton");
 
-	glutDisplayFunc(display);
+	glutDisplayFunc(display_func);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
 	glutIdleFunc(display);
+#else
+	Display *display;
+	Window root;
+	Window window;
+	XVisualInfo *visual;
+	GLXContext glcontext;
+	Colormap colormap;
+	XSetWindowAttributes windowattributes;
+	XWindowAttributes       gwa;
+	GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, GLX_ALPHA_SIZE, 8, GLX_STENCIL_SIZE, 8, GLX_ACCUM_GREEN_SIZE, 4, None };
 
+	display = XOpenDisplay(NULL);
+
+	root = DefaultRootWindow(display);
+
+	visual = glXChooseVisual(display, 0, att);
+
+	colormap = XCreateColormap(display, root, visual->visual, AllocNone);
+
+	windowattributes.colormap = colormap;
+	windowattributes.event_mask = ExposureMask | KeyPressMask;
+
+	window = XCreateWindow(display, root, XPOS, YPOS, XSIZE, YSIZE, 0, visual->depth, InputOutput, visual->visual, CWColormap | CWEventMask, &windowattributes);
+
+	XMapWindow(display, window);
+	XStoreName(display, window, "Skeleton");
+
+	glcontext = glXCreateContext(display, visual, NULL, GL_TRUE);
+	glXMakeCurrent(display, window, glcontext);
+
+#endif
 	dump_info();
 
 	glShadeModel(GL_SMOOTH);
@@ -461,7 +543,23 @@ int main(int argc, char *argv[])
 
 	model_init(&m);
 
+#ifdef USE_GLUT
 	glutMainLoop();
+#else
+	XGetWindowAttributes(display, window, &gwa);
+	reshape(gwa.width, gwa.height);
+
+	display_func();
+	glXSwapBuffers(display, window);
+
+	while(1) {
+		event_handler(display, window);
+		display_func();
+		glXSwapBuffers(display, window);
+
+		usleep(10000);
+	}
+#endif
 
 	return 0;
 }
