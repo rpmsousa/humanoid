@@ -3,40 +3,418 @@
 
 #include "linear.h"
 
-void draw_vec3(vec3 *o, vec3 *v)
-{
-	glBegin(GL_LINES);
-		/* back */
-		glNormal3f(0.0, 0.0, 1.0);
-		glColor3f(1, 1, 1);
+static GLuint _cylinder_list, _cone_list, _vector_list;
+#define MIN	0.00001f
 
-		if (o) {
-			glVertex3f((*o)[0], (*o)[1], (*o)[2]);
-			glVertex3f((*o)[0] + (*v)[0], (*o)[1] + (*v)[1], (*o)[2] + (*v)[2]);
-		} else {
-			glVertex3f(0.0, 0.0, 0.0);
-			glVertex3f((*v)[0], (*v)[1], (*v)[2]);
+
+/* Returns a display list for a cylinder of radius r and height h along the z direction.
+ * The cylinder will have N faces
+ * The base of the cylinder will be parallel to the xy plane, centered around "o"
+ * All polygons front face is drawn counter clock wise */
+void cylinder_vertex_list(vec3 *o, float r, float h, int faces)
+{
+	float angle;
+	int i;
+	int imax = faces + 1;
+	float step = 360.0f / (float) faces;
+	vec3 vertex[imax];
+	vec3 center = {0, 0, h/2.0f};
+	vec3 v0, v1, v2, v3, p0, p1, norm;
+
+	if (o) {
+		center[0] += (*o)[0];
+		center[1] += (*o)[1];
+		center[2] += (*o)[2];
+	}
+
+	for (i = 0, angle = 0.0; i < imax && angle < 360.0f; i++, angle = i * step) {
+		vertex[i][0] = cosf(angle * M_PI / 180.0f);
+		vertex[i][1] = sinf(angle * M_PI / 180.0f);
+	}
+
+	vertex[i][0] = cosf(0.0);
+	vertex[i][1] = sinf(0.0);
+	imax = i + 1;
+
+	glBegin(GL_TRIANGLE_FAN);
+
+		/* top face */
+		glNormal3f(0.0, 0.0, 1.0);
+		glVertex3f(center[0], center[1], center[2] + h / 2.0f);
+
+		for (i = 0; i < imax; i++)
+			glVertex3f(center[0] + r * vertex[i][0], center[1] + r * vertex[i][1], center[2] +  h / 2.0f);
+
+	glEnd();
+
+	glBegin(GL_TRIANGLE_FAN);
+
+		/* bottom face */
+		glNormal3f(0.0, 0.0, -1.0);
+		glVertex3f(center[0], center[1], center[2] - h / 2.0f);
+
+		for (i = imax - 1; i >= 0; i--)
+			glVertex3f(center[0] + r * vertex[i][0], center[1] + r * vertex[i][1], center[2] - h / 2.0f);
+
+	glEnd();
+
+	glBegin(GL_QUADS);
+
+		/* side faces */
+
+		for (i = 0; i < imax - 1; i++) {
+			/* lower left */
+			v0[0] = center[0] + r * vertex[i][0];
+			v0[1] = center[1] + r * vertex[i][1];
+			v0[2] = center[2] - h / 2.0f;
+
+			/* lower right */
+			v1[0] = center[0] + r * vertex[i + 1][0];
+			v1[1] = center[1] + r * vertex[i + 1][1];
+			v1[2] = center[2] - h / 2.0f;
+
+			/* upper right */
+			v2[0] = center[0] + r * vertex[i + 1][0];
+			v2[1] = center[1] + r * vertex[i + 1][1];
+			v2[2] = center[2] + h / 2.0f;
+
+			/* upper left */
+			v3[0] = center[0] + r * vertex[i][0];
+			v3[1] = center[1] + r * vertex[i][1];
+			v3[2] = center[2] + h / 2.0f;
+
+			p0[0] = v1[0] - v0[0];
+			p0[1] = v1[1] - v0[1];
+			p0[2] = v1[2] - v0[2];
+
+			p1[0] = v3[0] - v0[0];
+			p1[1] = v3[1] - v0[1];
+			p1[2] = v3[2] - v0[2];
+
+			unit_normal_vec3(&p0, &p1, &norm);
+			glNormal3f(norm[0], norm[1], norm[2]);
+
+			glVertex3f(v0[0], v0[1], v0[2]);
+			glVertex3f(v1[0], v1[1], v1[2]);
+			glVertex3f(v2[0], v2[1], v2[2]);
+			glVertex3f(v3[0], v3[1], v3[2]);
 		}
 
 	glEnd();
+
+#if NORMAL_DEBUG
+	glBegin(GL_LINES);
+		for (i = 0; i < imax - 1; i++) {
+			/* lower left */
+			v0[0] = center[0] + r * vertex[i][0];
+			v0[1] = center[1] + r * vertex[i][1];
+			v0[2] = center[2] - h / 2.0f;
+
+			/* lower right */
+			v1[0] = center[0] + r * vertex[i + 1][0];
+			v1[1] = center[1] + r * vertex[i + 1][1];
+			v1[2] = center[2] - h / 2.0f;
+
+			/* upper right */
+			v2[0] = center[0] + r * vertex[i + 1][0];
+			v2[1] = center[1] + r * vertex[i + 1][1];
+			v2[2] = center[2] + h / 2.0f;
+
+			/* upper left */
+			v3[0] = center[0] + r * vertex[i][0];
+			v3[1] = center[1] + r * vertex[i][1];
+			v3[2] = center[2] + h / 2.0f;
+
+			p0[0] = v1[0] - v0[0];
+			p0[1] = v1[1] - v0[1];
+			p0[2] = v1[2] - v0[2];
+
+			p1[0] = v3[0] - v0[0];
+			p1[1] = v3[1] - v0[1];
+			p1[2] = v3[2] - v0[2];
+
+			unit_normal_vec3(&p0, &p1, &norm);
+			glNormal3f(norm[0], norm[1], norm[2]);
+
+			glVertex3f((v0[0] + v1[0])/2, (v0[1] + v1[1])/2, (v0[2] + v3[2])/2);
+			glVertex3f((v0[0] + v1[0])/2 + norm[0], (v0[1] + v1[1])/2 + norm[1], (v0[2] + v3[2])/2 + norm[2]);
+		}
+
+	glEnd();
+#endif
+}
+
+GLuint cylinder_display_list(float r, float h, int faces)
+{
+	GLuint list = glGenLists(1);
+
+	glNewList(list, GL_COMPILE);
+
+	cylinder_vertex_list(NULL, r, h, faces);
+
+	glEndList();
+
+	return list;
+}
+
+/* Returns a display list for a cone of radius r and height h along the z direction.
+ * The cone will have N faces
+ * The base of the cone will be parallel to the xy plane, centered around "o"
+ * All polygons front face is drawn counter clock wise */
+void cone_vertex_list(vec3 *o, float r, float h, int faces)
+{
+	float angle;
+	int i;
+	int imax = faces + 1;
+	float step = 360.0f / (float) faces;
+	vec3 vertex[imax];
+	vec3 center = {0, 0, h/2.0f};
+	vec3 v0, v1, v2, p0, p1, norm;
+
+	if (o) {
+		center[0] += (*o)[0];
+		center[1] += (*o)[1];
+		center[2] += (*o)[2];
+	}
+
+	for (i = 0, angle = 0.0; i < imax && angle < 360.0f; i++, angle = i * step) {
+		vertex[i][0] = cosf(angle * M_PI / 180.0f);
+		vertex[i][1] = sinf(angle * M_PI / 180.0f);
+	}
+
+	vertex[i][0] = cosf(0.0);
+	vertex[i][1] = sinf(0.0);
+	imax = i + 1;
+
+	glBegin(GL_TRIANGLE_FAN);
+
+		/* bottom face */
+		glNormal3f(0.0, 0.0, -1.0);
+		glVertex3f(center[0], center[1], center[2] - h / 2.0f);
+
+		for (i = imax - 1; i >= 0; i--)
+			glVertex3f(center[0] + r * vertex[i][0], center[1] + r * vertex[i][1], center[2] - h / 2.0f);
+
+	glEnd();
+
+	glBegin(GL_TRIANGLES);
+
+		/* side faces */
+		for (i = 0; i < imax - 1; i++) {
+			/* lower left */
+			v0[0] = center[0] + r * vertex[i][0];
+			v0[1] = center[1] + r * vertex[i][1];
+			v0[2] = center[2] - h / 2.0f;
+
+			/* lower right */
+			v1[0] = center[0] + r * vertex[i + 1][0];
+			v1[1] = center[1] + r * vertex[i + 1][1];
+			v1[2] = center[2] - h / 2.0f;
+
+			/* upper */
+			v2[0] = center[0];
+			v2[1] = center[1];
+			v2[2] = center[2] + h / 2.0f;
+
+			p0[0] = v1[0] - v0[0];
+			p0[1] = v1[1] - v0[1];
+			p0[2] = v1[2] - v0[2];
+
+			p1[0] = v2[0] - v0[0];
+			p1[1] = v2[1] - v0[1];
+			p1[2] = v2[2] - v0[2];
+
+			unit_normal_vec3(&p0, &p1, &norm);
+			glNormal3f(norm[0], norm[1], norm[2]);
+
+			glVertex3f(v0[0], v0[1], v0[2]);
+			glVertex3f(v1[0], v1[1], v1[2]);
+			glVertex3f(v2[0], v2[1], v2[2]);
+		}
+
+	glEnd();
+
+#if NORMAL_DEBUG
+	glBegin(GL_LINES);
+		for (i = 0; i < imax - 1; i++) {
+			/* lower left */
+			v0[0] = center[0] + r * vertex[i][0];
+			v0[1] = center[1] + r * vertex[i][1];
+			v0[2] = center[2] - h / 2.0f;
+
+			/* lower right */
+			v1[0] = center[0] + r * vertex[i + 1][0];
+			v1[1] = center[1] + r * vertex[i + 1][1];
+			v1[2] = center[2] - h / 2.0f;
+
+			/* upper */
+			v2[0] = center[0];
+			v2[1] = center[1];
+			v2[2] = center[2] + h / 2.0f;
+
+			p0[0] = v1[0] - v0[0];
+			p0[1] = v1[1] - v0[1];
+			p0[2] = v1[2] - v0[2];
+
+			p1[0] = v2[0] - v0[0];
+			p1[1] = v2[1] - v0[1];
+			p1[2] = v2[2] - v0[2];
+
+			unit_normal_vec3(&p0, &p1, &norm);
+
+			glVertex3f(v0[0], v0[1], v0[2]);
+			glVertex3f(v0[0] + norm[0], v0[1] + norm[1], v0[2] + norm[2]);
+		}
+
+	glEnd();
+#endif
+
+}
+
+GLuint cone_display_list(float r, float h, int faces)
+{
+	GLuint list = glGenLists(1);
+
+	glNewList(list, GL_COMPILE);
+
+	cone_vertex_list(NULL, r, h, faces);
+
+	glEndList();
+
+	return list;
+}
+
+/* Returns a display list for a vector of length l.
+ * The vector will be along the z axis
+ * The vector will start at 0,0,0 and end at 0,l,0 */
+void vector_vertex_list(float r, float l, int faces)
+{
+	float length = 0.90 * l;
+	vec3 o = {0.0, 0.0, length};
+
+	/* draw cylinder, x% of the length */
+	cylinder_vertex_list(NULL, r, length, faces);
+
+	/* draw cone, (1-x)% of the length */
+	cone_vertex_list(&o, r * 1.5, 1.0 - length, faces);
+}
+
+GLuint vector_display_list(float r, float l, int faces)
+{
+	GLuint list = glGenLists(1);
+
+	glNewList(list, GL_COMPILE);
+
+	vector_vertex_list(r, l, faces);
+
+	glEndList();
+
+	return list;
+}
+
+void draw_vec3(vec3 *o, vec3 *v)
+{
+	scalar l, angle;
+	vec3 n;
+
+	l = norm_vec3(v);
+
+	if (l < MIN)
+		return;
+
+	glPushMatrix();
+
+	if (o)
+		glTranslatef((*o)[0], (*o)[1], (*o)[2]);
+
+	cross_product_vec3(&vec3_unit_z, v, &n);
+	angle = angle_vec3(v, &vec3_unit_z);
+
+	if (angle > 180.0f - MIN)
+		glRotatef(180.0, 1.0f, 0.0, 0.0);
+	else if (angle > MIN)
+		glRotatef(angle, n[0], n[1], n[2]);
+
+	glScalef(1.0f, 1.0f, l);
+	glCallList(_vector_list);
+
+	glPopMatrix();
+}
+
+void draw_segment_vec4(vec4 *p0, vec4 *p1)
+{
+	scalar l, angle;
+	vec3 n, v;
+
+	v[0] = (*p1)[0] - (*p0)[0];
+	v[1] = (*p1)[1] - (*p0)[1];
+	v[2] = (*p1)[2] - (*p0)[2];
+
+	l = norm_vec3(&v);
+
+	if (l < MIN)
+		return;
+
+	glPushMatrix();
+
+	glTranslatef((*p0)[0], (*p0)[1], (*p0)[2]);
+
+	cross_product_vec3(&vec3_unit_z, &v, &n);
+	angle = angle_vec3(&v, &vec3_unit_z);
+
+	if (angle > 180.0f - MIN)
+		glRotatef(180, 1.0f, 0.0, 0.0);
+	else if (angle > MIN)
+		glRotatef(angle, n[0], n[1], n[2]);
+
+	glScalef(1.0f, 1.0f, l);
+
+	glCallList(_vector_list);
+
+	glPopMatrix();
+}
+
+void _draw_vec4(vec4 *o, vec4 *v)
+{
+	scalar l, angle;
+	vec3 n;
+
+	l = norm_vec3((vec3 *)v);
+
+	if (l < MIN)
+		return;
+
+	glPushMatrix();
+
+	if (o)
+		glTranslatef((*o)[0], (*o)[1], (*o)[2]);
+
+	cross_product_vec3(&vec3_unit_z, (vec3 *)v, &n);
+	angle = angle_vec3((vec3 *)v, &vec3_unit_z);
+
+	if (angle > 180.0f - MIN)
+		glRotatef(180, 1.0f, 0.0, 0.0);
+	else if (angle > MIN)
+		glRotatef(angle, n[0], n[1], n[2]);
+
+	glScalef(1.0f, 1.0f, l);
+
+	glCallList(_vector_list);
+
+	glPopMatrix();
+}
+
+
+void draw_vec4_color3f(vec4 *o, vec4 *v, float r, float g, float b)
+{
+	glColor3f(r, g, b);
+
+	_draw_vec4(o, v);
 }
 
 void draw_vec4(vec4 *o, vec4 *v)
 {
-	glBegin(GL_LINES);
-		/* back */
-		glNormal3f(0.0, 0.0, 1.0);
-		glColor3f(1, 1, 1);
-
-		if (o) {
-			glVertex3f((*o)[0], (*o)[1], (*o)[2]);
-			glVertex3f((*o)[0] + (*v)[0], (*o)[1] + (*v)[1], (*o)[2] + (*v)[2]);
-		} else {
-			glVertex3f(0.0, 0.0, 0.0);
-			glVertex3f((*v)[0], (*v)[1], (*v)[2]);
-		}
-
-	glEnd();
+	_draw_vec4(o, v);
 }
 
 GLuint frame_display_list(void)
@@ -196,71 +574,14 @@ GLuint cube_display_list(void)
 	return list;
 }
 
-
-GLuint cylinder_display_list(float step)
+void draw_init(void)
 {
-	GLuint list;
-	float angle;
-	int i;
-	int imax = (int)((360.0f/step) + 1.0f) + 1;
-	vec3 vertex[imax];
-	list = glGenLists(1);
-	vec3 center = {0.5, 0.5, 0.5};
-	float r = 0.5;
+	glPushMatrix();
+	glLoadIdentity();
 
-	for (i = 0, angle = 0.0; i < imax && angle < 360.0f; i++, angle = i * step) {
-		vertex[i][0] = cosf(angle * M_PI / 180.0f);
-		vertex[i][2] = sinf(angle * M_PI / 180.0f);
-	}
+	_cone_list = cone_display_list(0.5f, 1.0f, 20);
+	_cylinder_list = cylinder_display_list(0.5f, 1.0f, 20);
+	_vector_list = vector_display_list(0.02f, 1.0f, 20);
 
-	vertex[i][0] = cosf(0.0);
-	vertex[i][2] = sinf(0.0);
-	imax = i + 1;
-
-	glNewList(list, GL_COMPILE);
-
-		glBegin(GL_TRIANGLE_FAN);
-
-			/* top face */
-			glColor3f(1, 0, 0);
-			glNormal3f(0.0, 1.0, 0.0);
-			glVertex3f(center[0], 1.0, center[2]);
-
-			for (i = 0; i < imax; i++)
-				glVertex3f(center[0] + r * vertex[i][0], 1.0, center[2] + r * vertex[i][2]);
-
-			glEnd();
-
-		glBegin(GL_TRIANGLE_FAN);
-
-			/* bottom face */
-			glColor3f(0, 0, 1);
-			glNormal3f(0.0, -1.0, 0.0);
-			glVertex3f(center[0], 0.0, center[2]);
-
-			for (i = 0; i < imax; i++)
-				glVertex3f(center[0] + r * vertex[i][0], 0.0, center[2] + r * vertex[i][2]);
-
-		glEnd();
-
-		glBegin(GL_QUADS);
-
-			/* side faces */
-			glColor3f(0, 1, 0);
-
-			for (i = 0; i < imax - 1; i++) {
-				glNormal3f(vertex[i][0], 0.0, vertex[i][2]);
-				glVertex3f(center[0] + r * vertex[i][0], 0.0, center[2] + r * vertex[i][2]);
-				glVertex3f(center[0] + r * vertex[i][0], 1.0, center[2] + r * vertex[i][2]);
-
-				glNormal3f(vertex[i + 1][0], 0.0, vertex[i + 1][2]);
-				glVertex3f(center[0] + r * vertex[i + 1][0], 1.0, center[2] + r * vertex[i + 1][2]);
-				glVertex3f(center[0] + r * vertex[i + 1][0], 0.0, center[2] + r * vertex[i + 1][2]);
-			}
-
-		glEnd();
-
-	glEndList();
-
-	return list;
+	glPopMatrix();
 }
