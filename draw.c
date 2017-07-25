@@ -18,7 +18,7 @@ void cylinder_vertex_list(vec3 *o, float r, float h, int faces)
 	int imax = faces + 1;
 	float step = 360.0f / (float) faces;
 	vec3 vertex[imax];
-	vec3 center = {0, 0, h/2.0f};
+	vec3 center = {r, r, h/2.0f};
 	vec3 v0, v1, v2, v3, p0, p1, norm;
 
 	if (o) {
