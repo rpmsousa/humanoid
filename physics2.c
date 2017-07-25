@@ -10,8 +10,7 @@ void position_relative_update(struct element *e, float dt)
 	mat4 rotation;
 	scalar a;
 
-	product(&e->a, &e->a, &a);
-	a = sqrtf(a);
+	a = norm_vec3((vec3 *)&e->a);
 
 	rotation_mat4(&rotation, dt * a, e->a[0], e->a[1], e->a[2]);
 
@@ -21,9 +20,9 @@ void position_relative_update(struct element *e, float dt)
 	scalar c;
 
 	/* This calculation diverges, since it needs to continuously integrate dr over time */
-	printf("element: %p\n", e);
-	print("tr", &e->tr);
-	print("tv", &e->tv);
+	//printf("element: %p\n", e);
+//	print("tr", &e->tr);
+//	print("tv", &e->tv);
 	
 
 	product(&e->tv, &e->tr, &dr);
@@ -38,9 +37,11 @@ void position_relative_update(struct element *e, float dt)
 
 	sum(&e->tr, &dr, &e->tr);
 
-	print("dr", &dr);
-	print("tr new", &e->tr);
+//	print("dr", &dr);
+//	print("tr new", &e->tr);
 #endif
+
+	invert_mat4(&e->tr, &e->tr_inverse);
 }
 
 void position_update(struct element *e, float dt)
@@ -73,94 +74,57 @@ void local2parent(struct element *e, vec4 *r1, vec4 *r2)
 /* Returns local coordinates for a parent vector */
 void parent2local(struct element *e, vec4 *r1, vec4 *r2)
 {
-	mat4 inv_tr;
-
-	invert_mat4(&e->tr, &inv_tr);
-
-	product(&inv_tr, r1, r2);
+	product(&e->tr_inverse, r1, r2);
 }
 
-/* Returns relative velocity for a point, in local coordinates */
-void _velocity_local(struct element *e, vec4 *r, vec4 *v)
+/* Returns global coordinates for a parent vector */
+void parent2global(struct element *e, vec4 *r1, vec4 *r2)
 {
-	/* Own relative velocity, in local coordinates */
-	product(&e->tv, r, v);
+	if (e->parent)
+		local2global(e->parent, r1, r2);
+	else
+		local2global(e, r1, r2);
 }
 
-/* Returns relative velocity for a point, in global coordinates */
-void velocity_local(struct element *e, vec4 *r, vec4 *v)
+/* Returns local velocity (parent coordinates) for a point (parent coordinates) */
+void local_velocity(struct element *e, vec4 *r, vec4 *v)
 {
-	_velocity_local(e, r, v);
-	local2global(e, v, v);
+	vec4 _r; /* vector from element basis origin to r, in parent coordinates */
+
+	_r[0] = (*r)[0] - e->tr[12];
+	_r[1] = (*r)[1] - e->tr[13];
+	_r[2] = (*r)[2] - e->tr[14];
+	_r[3] = 1.0f;
+
+	/* Velocity in element frame, in parent coordinates */
+	product(&e->tv, &_r, v);
+
+//	print("local velocity", v);
 }
 
-/* Returns the absolute velocity vector for a point in element e basis.
- * r is the relative position of the point.
- * v is the calculated absolute velocity (in element e coordinates) */
-void velocity(struct element *e, vec4 *r, vec4 *v)
+/* Returns velocity (parent coordinates) for a point (parent coordinates) due to parent frame velocity */
+void frame_velocity(struct element *e, vec4 *r, vec4 *v)
 {
-	struct element *p;
-//	mat4 inv_tr, _inv_tr;
-	vec4 _v, p_r;
+	if (e->parent) {
+		product(&e->parent->____tv, r, v);
+	} else
+		product(&mat4_null, r, v);
 
-//	printf("\n\n%p\n", e);
-
-//	assign(&mat4_unit, &inv_tr);
-
-//	print("pos", r);
-
-	/* Own relative velocity, in local coordinates */
-	product(&e->tv, r, v);
-
-	/* Own relative velocity, in global coordinates */
-	product(&e->_tr, v, v);
-
-//	print("v", v);
-
-	while ((p = e->parent)) {
-		/* position in parent coordinates */
-		//product(&e->tr, &vec4_null, &p_r);
-		product(&e->tr, r, &p_r);
-
-		print("p_pos", &p_r);
-
-		/* velocity in parent coordinates */
-		product(&p->tv, &p_r, &_v);
-
-		/*velocity in global coordinates */
-		product(&p->_tr, &_v, &_v);
-	
-//		print("p_v", &_v);
-
-		/* total velocity in own coordinates */
-	//	transpose(&e->tr, &_inv_tr);
-	//	_inv_tr[3] = 0.0;
-	//	_inv_tr[7] = 0.0;
-	//	_inv_tr[11] = 0.0;
-	//	_inv_tr[15] = 1.0;
-
-//		print("tr", &e->tr);
-//		print("_inv tr", &_inv_tr);
-
-//		print("inv tr", &inv_tr);
-
-		//product(&inv_tr, &_inv_tr, &inv_tr);
-
-//		print("total inv tr", &inv_tr);
-
-		//product(&inv_tr, &_v, &_v);
-
-//		print("_v", &_v);
-
-		sum(v, &_v, v);
-
-//		print("total _v", &v);
-
-		e = p;
-		r = &p_r;
-	}
+//	print("frame velocity", v);
 }
 
+/* Returns total velocity (parent coordinates) for a point (parent coordinates) */
+void total_velocity(struct element *e, vec4 *r, vec4 *v)
+{
+	vec4 local_v, frame_v;
+
+	local_velocity(e, r, &local_v);
+	frame_velocity(e, r, &frame_v);
+
+	sum(&local_v, &frame_v, v);
+
+//	print("total velocity", v);
+}
 
 void position_init(struct element *e)
 {
@@ -181,66 +145,40 @@ void position_init(struct element *e)
 
 void velocity_update(struct element *e)
 {
-	struct element *p = e->parent;
-	mat4 inv_tr;
-	mat4 _r;
+	vec4 r;
 
-	invert_mat4(&e->tr, &inv_tr);
+	local2parent(e, &vec4_unit_x, &r);
+	local_velocity(e, &r, (vec4 *)&e->_tv[0]);
+	frame_velocity(e, &r, (vec4 *)&e->__tv[0]);
+	total_velocity(e, &r, (vec4 *)&e->___tv[0]);
 
-	/* Basis unit vectors, in local coordinates */
-	assign(&mat4_unit, &_r);
-	_r[3] = _r[7] = _r[11] = 1.0;
-	_r[15] = 0.0;
+	local2parent(e, &vec4_unit_y, &r);
+	local_velocity(e, &r, (vec4 *)&e->_tv[4]);
+	frame_velocity(e, &r, (vec4 *)&e->__tv[4]);
+	total_velocity(e, &r, (vec4 *)&e->___tv[4]);
 
-	/* Velocity of each basis vector, in local coordinates */
-	product(&e->tv, &_r, &e->_tv); 
-	e->_tv[12] = e->_tv[13] = e->_tv[14] = e->_tv[15] = 0.0;
+	local2parent(e, &vec4_unit_z, &r);
+	local_velocity(e, &r, (vec4 *)&e->_tv[8]);
+	frame_velocity(e, &r, (vec4 *)&e->__tv[8]);
+	total_velocity(e, &r, (vec4 *)&e->___tv[8]);
 
-	print("unit position", &_r);
-	print("velocity matrix", &e->tv);
-	print("unit velocity", &e->_tv);
-
-	/* Basis unit vectors velocity */
-	if (p) {
-		mat4 _tv;
-
-		/* Basis velocity due to parent basis velocity */
-		product(&e->tr, &_r, &_r);
-		_r[12] = _r[13] = _r[14] = _r[15] = 0.0;
-		if (e->index == 2) {
-			print("transform", &e->tr);
-			print("position", &_r);
-
-		print("parent velocity", &p->___tv);
-		}
-	
-		/* Linear combination of basis vector velocity */
-		product(&p->___tv, &_r, &e->__tv);
-		if (e->index == 2)
-		print("velocity", &e->__tv);
-
-		product(&inv_tr, &e->__tv, &e->__tv);
-
-		sum(&e->_tv, &e->__tv, &e->___tv);
-		if (e->index == 2) {
-			print("basis velocity", &e->__tv);
-			print("local velocity", &e->_tv);
-
-			print("total velocity", &e->___tv);
-		}
-
-	} else {
-		assign(&e->_tv, &e->__tv);
-		assign(&e->__tv, &e->___tv);
-	}
+	parent2local(e, (vec4 *)&e->___tv[0], (vec4 *)&e->____tv[0]);
+	parent2local(e, (vec4 *)&e->___tv[4], (vec4 *)&e->____tv[4]);
+	parent2local(e, (vec4 *)&e->___tv[8], (vec4 *)&e->____tv[8]);
 }
 
 void velocity_init(struct element *e)
 {
 	struct element *p = e->parent;
+	vec4 w; /*angular velocity vector in radians/s */
+
+	w[0] = degrees_2_radians(e->a[0]);
+	w[1] = degrees_2_radians(e->a[1]);
+	w[2] = degrees_2_radians(e->a[2]);
+	w[3] = degrees_2_radians(e->a[3]);
 
 	/* Basis velocity, in parent coordinates */
-	cross_product_mat4(&e->a, &e->tv);
+	cross_product_mat4(&w, &e->tv);
 
 	print("angular velocity", &e->a);
 	print("velocity", &e->tv);

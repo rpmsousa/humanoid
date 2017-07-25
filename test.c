@@ -184,11 +184,6 @@ void linear_test(void)
 
 int main(int argc, char *argv[])
 {
-	vec4 v = {1, 2, 3, 9 };
-	vec3 u = {6, 7, 8 };
-	vec4 w;
-	float c = 2.34;
-
 	glutInit(&argc, argv);
 
 	linear_test();
