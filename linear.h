@@ -5,6 +5,15 @@
 #include <math.h>
 
 /*
+ Matrices as single dimension arrays
+ Matrice 1st column with indexs 0, 1, 2, n
+ Column vectors, left multiply
+ 4x4		1x4
+  0  4  8 12	  1
+  1  5  9 13	  2
+  2  6 10 14	  3
+  3  7 11 15	  4
+
  a_i,j, i=row index, j=comlumn index. a_mxn, m rows x n columns
 
  Orthogonal Matrice:
@@ -138,6 +147,11 @@ static inline void assign_mat4(mat4 *m, mat4 *n)
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), assign_mat4((void *)m, (void *)n),	\
 		choice_error()))))
 
+scalar norm_vec3(vec3 *v);
+scalar norm_vec4(vec4 *v);
+
+void normalize_vec3(vec3 *v, vec3 *w);
+void normalize_vec4(vec4 *v, vec4 *w);
 
 static inline void sum_vec3(vec3 *u, vec3 *v, vec3 *w)
 {
@@ -423,6 +437,27 @@ static inline void product_vec4(vec4 *u, vec4 *v, scalar *c)
 		choice_error()),	\
 		choice_error())))))
 
+static inline scalar angle_vec4(vec4 *u, vec4 *v)
+{
+	scalar angle;
+
+	product_vec4(u, v, &angle);
+
+	angle /= norm_vec4(u) * norm_vec4(v);
+
+	return acos(angle) * 180.0f / M_PI;
+}
+
+static inline scalar angle_vec3(vec3 *u, vec3 *v)
+{
+	scalar angle;
+
+	product_vec3(u, v, &angle);
+
+	angle /= norm_vec3(u) * norm_vec3(v);
+
+	return acos(angle) * 180.0f / M_PI;
+}
 
 /* constructs cross produt matrix M from a vector m so that
    Mv = m x v */
@@ -441,9 +476,11 @@ static inline void cross_product_mat4(vec4 *v, mat4 *m)
 	(*m)[3] =      0.0; (*m)[7] =      0.0; (*m)[11] =      0.0; (*m)[15] = 0.0;
 }
 
-static inline void cross_product(vec3 *u, vec3 *v, vec3 *w)
+static inline void cross_product_vec3(vec3 *u, vec3 *v, vec3 *w)
 {
-	/* FIXME */ /* vk[0] = vi[0] * vj[0] + vi[1] * vj[1] + vi[2] + vj[2]; */
+	(*w)[0] =  (*u)[1] * (*v)[2] - (*u)[2] * (*v)[1];
+	(*w)[1] = -((*u)[0] * (*v)[2] - (*u)[2] * (*v)[0]);
+	(*w)[2] =  (*u)[0] * (*v)[1] - (*u)[1] * (*v)[0];
 }
 
 static inline scalar det_mat2(mat2 *m)
@@ -571,8 +608,12 @@ void rotation_mat4(mat4 *m, scalar a, scalar u0, scalar u1, scalar u2);
 void rotate(mat4 *m, scalar a, scalar u0, scalar u1, scalar u2);
 
 void invert_mat3(mat3 *m, mat3 *n);
+void invert_mat4(mat4 *m, mat4 *n);
 
 #define invert(m, n)	\
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), invert_mat3((void *)m, (void *)n),	\
-	choice_error())
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), invert_mat4((void *)m, (void *)n),	\
+	choice_error()))
+
+void unit_normal_vec3(vec3 *u, vec3 *v, vec3 *w);
 #endif /* _LINEAR_H_ */

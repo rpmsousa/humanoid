@@ -91,27 +91,45 @@ void identity_mat4(mat4 *m)
 	(*m)[3] = 0.0; (*m)[7] = 0.0; (*m)[11] = 0.0; (*m)[15] = 1.0;
 }
 
-void normalize_vec3(vec3 *v)
+scalar norm_vec3(vec3 *v)
+{
+	scalar n;
+
+	product_vec3(v, v, &n);
+
+	return sqrtf(n);
+}
+
+scalar norm_vec4(vec4 *v)
+{
+	scalar n;
+
+	product_vec4(v, v, &n);
+
+	return sqrtf(n);
+}
+
+void normalize_vec3(vec3 *v, vec3 *w)
 {
 	scalar n;
 
 	/* normalize v */
-	product(v, v, &n);
-	if ((n != (scalar) 0.0) && (n != (scalar)1.0)) {
-		n = (scalar)1.0 / sqrtf(n);
-		product(&n, v, v);
+	n = norm_vec3(v);
+	if ((n != (scalar)0.0) && (n != (scalar)1.0)) {
+		n = (scalar)1.0 / n;
+		product_c_vec3(&n, v, w);
 	}
 }
 
-void normalize_vec4(vec4 *v)
+void normalize_vec4(vec4 *v, vec4 *w)
 {
 	scalar n;
 
 	/* normalize v */
-	product(v, v, &n);
-	if ((n != (scalar) 0.0) && (n != (scalar)1.0)) {
-		n = (scalar)1.0 / sqrtf(n);
-		product(&n, v, v);
+	n = norm_vec4(v);
+	if ((n != (scalar)0.0) && (n != (scalar)1.0)) {
+		n = (scalar)1.0 / n;
+		product_c_vec4(&n, v, w);
 	}
 }
 
@@ -121,7 +139,7 @@ void rotation_mat3(mat3 *m, scalar a, scalar u0, scalar u1, scalar u2)
 	scalar sin = sinf(a * M_PI / 180.0f);
 	scalar cos = cosf(a * M_PI / 180.0f);
 
-	normalize_vec3(&u);
+	normalize_vec3(&u, &u);
 
 	(*m)[0] = cos + u[0] * u[0] * (1.0f - cos);
 	(*m)[1] = u[1] * u[0] * (1.0f - cos) + u[2] * sin;
@@ -142,7 +160,7 @@ void rotation_mat4(mat4 *m, scalar a, scalar u0, scalar u1, scalar u2)
 	float sin = sinf((a * M_PI) / 180.0f);
 	float cos = cosf((a * M_PI) / 180.0f);
 
-	normalize_vec3(&u);
+	normalize_vec3(&u, &u);
 
 	(*m)[0] = cos + u[0] * u[0] * (1.0f - cos);
 	(*m)[1] = u[1] * u[0] * (1.0f - cos) + u[2] * sin;
@@ -233,4 +251,10 @@ void invert_mat4(mat4 *m, mat4 *n)
 		d = ((scalar)1.0)/d;
 		product(&d, n, n);
 	}
+}
+
+void unit_normal_vec3(vec3 *u, vec3 *v, vec3 *w)
+{
+	cross_product_vec3(u, v, w);
+	normalize_vec3(w, w);
 }
