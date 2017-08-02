@@ -321,6 +321,16 @@ static void drawing_init(void)
 	glLineWidth(3);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+}
+
+static void culling_init(void)
+{
+	glCullFace(GL_BACK);
+
+	glFrontFace(GL_CCW);
+
+	glEnable(GL_CULL_FACE);
 }
 
 static void dump_info(void)
@@ -396,6 +406,10 @@ int main(int argc, char *argv[])
 	lighting_init();
 
 	antialiasing_init();
+
+	culling_init();
+
+	draw_init();
 
 	frame_list = frame_display_list();
 
