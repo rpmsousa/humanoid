@@ -1,7 +1,7 @@
 all: humanoid test
 
 CFLAGS=-O2 -Wall
-LDFLAGS=-lglut -lm -lGLU
+LDFLAGS=-lglut -lm -lGLU -lGL
 CC=gcc
 
 SRC = main.c model.c model_bulky.c model_sticky.c model_simple.c movement.c linear.c physics.c
