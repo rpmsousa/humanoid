@@ -112,3 +112,18 @@ and with "infinite" accelaration at the start/end of the movement...
 
 - Add support for external forces, namely air drag.
 - Add center of mass movement equation
+
+
+[Linear Algebra library]
+Cleanup the vec4/mat4 types/definitions: use separate definitions for true 4 dimension vectors/matrices and homogeneous
+extension of 3 dimension vectors/matrices.
+
+Make vector/matrice types compatible with OpenGL vector/matrice pointer arguments.
+
+Correctly handle float/double types when calling library math functions
+
+[Drawing primitives]
+Don't nest display lists (use lower level functions that just return vertex lists) and don't include matrice
+transformations in the display lists (make functions more generic to include transformations in the vertexs generated).
+Thinking of moving to a modern OpenGL implementation, use vertex attributes to store the transformations?
+Improve tesselation of big surfaces for better lightning effets.
