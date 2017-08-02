@@ -1,12 +1,18 @@
 #include <stdio.h>
+#include <sys/time.h>
 #include <GL/glut.h>
 #include <GL/glu.h>
 #include <math.h>
 #include "linear.h"
 #include "model2.h"
+#include "physics2.h"
 #include "draw.h"
 
 GLuint frame_list;
+struct timeval t0;
+int pause = 0;
+struct timeval tprev;
+scalar t = 0.0;
 
 double cz = -10.0;
 double cy = 0.0;
@@ -80,8 +86,6 @@ void element_print(struct element *b)
 //	print("velocity", b->vt);
 //	print("absolute velocity", b->_vt);
 }
-
-scalar t = 0.0;
 
 void element_draw(struct element *e)
 {
@@ -173,8 +177,26 @@ static void reshape(int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 }
 
+static void print_fps(void)
+{
+	struct timeval ti;
+	static unsigned int count = 0;
+
+	gettimeofday(&ti, NULL);
+	count++;
+
+	if (ti.tv_sec > t0.tv_sec) {
+		float dt = (ti.tv_sec - t0.tv_sec) * 1000000.0 + ti.tv_usec - t0.tv_usec;
+		printf("fps: %f\n", count * 1000000.0 / dt);
+		t0 = ti;
+		count = 0;
+	}
+}
+
 static void display(void)
 {
+	struct timeval tnow;
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glLoadIdentity();
@@ -185,7 +207,14 @@ static void display(void)
 
 	model_draw(&m);
 
-	t += 0.1;
+	gettimeofday(&tnow, NULL);
+
+	if (!pause)
+		t += (float)(tnow.tv_sec - tprev.tv_sec) + (tnow.tv_usec - tprev.tv_usec) / 1000000.0f;
+
+	tprev = tnow;
+
+	print_fps();
 
 	model_update(&m, t);
 
@@ -227,6 +256,13 @@ static void keyboard (unsigned char key, int x, int y)
 		ty -= 5;
 		break;
 
+	case ' ':
+		if (pause)
+			pause = 0;
+		else
+			pause = 1;
+
+		break;
 	default:
 		break;
 	}
@@ -362,6 +398,9 @@ int main(int argc, char *argv[])
 	antialiasing_init();
 
 	frame_list = frame_display_list();
+
+	gettimeofday(&t0, NULL);
+	tprev = t0;
 
 //	rotate(&m.element[0].tr, 30, 0, 1, 0);
 
