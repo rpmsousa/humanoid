@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
 	glShadeModel(GL_SMOOTH);
 
 //	cube_list = cube_display_list();
-	cube_list = cylinder_display_list(5.0);
+	cube_list = cylinder_display_list(0.5, 1.0, 60);
 	frame_list = frame_display_list();
 
 	drawing_init();
