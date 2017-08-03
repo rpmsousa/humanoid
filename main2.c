@@ -326,7 +326,7 @@ static void antialiasing_init(void)
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);	
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 static void depth_init(void)
@@ -337,7 +337,7 @@ static void depth_init(void)
 
 static void drawing_init(void)
 {
-	glLineWidth(3);
+	glLineWidth(1);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 //	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
