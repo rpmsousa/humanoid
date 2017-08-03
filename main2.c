@@ -87,61 +87,80 @@ void element_print(struct element *b)
 //	print("absolute velocity", b->_vt);
 }
 
+void element_velocity_draw(struct element *e, int index)
+{
+	vec4 *r, *v_local, *v_frame, *v_total;
+	vec4 r0;
+
+	local2parent(e, &vec4_null, &r0);
+
+	r = (vec4 *)&e->tr[index];
+	v_local = (vec4 *)&e->_tv[index];
+	v_frame = (vec4 *)&e->__tv[index];
+	v_total = (vec4 *)&e->___tv[index];
+
+	sum(&r0, r, r);
+
+	glColor3f(1.0, 1.0, 0.0);
+	draw_vec4(r, v_frame);
+
+	glColor3f(0.0, 1.0, 1.0);
+	draw_vec4(r, v_total);
+
+	sum(r, v_frame, r);
+
+	glColor3f(0.0, 0.0, 1.0);
+	draw_vec4(r, v_local);
+}
+
+
 void element_draw(struct element *e)
 {
-	vec4 v;
+	vec4 r0, *r;
+	vec4 r1, r2;
 
 	glPushMatrix();
 
-	/* All drawing coordinates are local */
-	glMultMatrixf(e->_tr);
+	/* All drawing coordinates are parent coordinates */
+	if (e->parent)
+		glMultMatrixf(e->parent->_tr);
 
-	/* local velocity */
-	v[0] = e->_tv[0];
-	v[1] = e->_tv[1];
-	v[2] = e->_tv[2];
-	v[3] = e->_tv[3];
+	/* Basis origin */
+	local2parent(e, &vec4_null, &r0);
 
-	draw_vec4(&vec4_unit_x, &v);
+#if DEBUG_TRANSFORM
+	r1[0] = 0.5;
+	r1[1] = 0.5;
+	r1[2] = 0.5;
+	r1[3] = 1.0;
 
-	v[0] = e->_tv[4];
-	v[1] = e->_tv[5];
-	v[2] = e->_tv[6];
-	v[3] = e->_tv[7];
+	local2parent(e, &r1, &r1);
 
-	draw_vec4(&vec4_unit_y, &v);
-
-	v[0] = e->_tv[8];
-	v[1] = e->_tv[9];
-	v[2] = e->_tv[10];
-	v[3] = e->_tv[11];
-
-	draw_vec4(&vec4_unit_z, &v);
-#if 0
-	v[0] = e->__tv[0];
-	v[1] = e->__tv[1];
-	v[2] = e->__tv[2];
-	v[3] = e->__tv[3];
-
-	draw_vec4(&vec4_unit_x, &v);
-
-
-	v[0] = e->__tv[4];
-	v[1] = e->__tv[5];
-	v[2] = e->__tv[6];
-	v[3] = e->__tv[7];
-
-	draw_vec4(&vec4_unit_y, &v);
-
-	v[0] = e->__tv[8];
-	v[1] = e->__tv[9];
-	v[2] = e->__tv[10];
-	v[3] = e->__tv[11];
-
-	draw_vec4(&vec4_unit_z, &v);
+	draw_segment_vec4(&r0, &r1);
 #endif
 
-	glCallList(frame_list);
+	/* Angular velocity vector */
+	glColor3f(1.0, 1.0, 1.0); /* white */
+	draw_vec4(&r0, &e->a);
+
+	/* basis + basis local velocity */
+	glColor3f(1.0, 0.0, 0.0);
+	r = (vec4 *)&e->tr[0];
+	draw_vec4(&r0, r);
+
+	glColor3f(0.0, 1.0, 0.0);
+	r = (vec4 *)&e->tr[4];
+	draw_vec4(&r0, r);
+
+	glColor3f(0.0, 0.0, 1.0);
+	r = (vec4 *)&e->tr[8];
+	draw_vec4(&r0, r);
+
+	element_velocity_draw(e, 0);
+	element_velocity_draw(e, 4);
+	element_velocity_draw(e, 8);
+
+//	glCallList(frame_list);
 
 	glPopMatrix();
 }
@@ -427,16 +446,16 @@ int main(int argc, char *argv[])
 //	rotate(&m.element[5].tr, 30, 0, 1, 0);
 
 	m.element[0].a[0] = 0.0;
-	m.element[0].a[1] = 0.5; /* angular velocity about the y axis */
+	m.element[0].a[1] = 60.0; /* angular velocity about the y axis */
 	m.element[0].a[2] = 0.0;
 
 	m.element[1].a[0] = 0.0;
-	m.element[1].a[1] = 1.0;
-	m.element[1].a[2] = 0.0; /* angular velocity about the z axis */
+	m.element[1].a[1] = 0.0;
+	m.element[1].a[2] = 10; /* angular velocity about the z axis */
 
-	m.element[2].a[0] = 1.0;
+	m.element[2].a[0] = 0.0;
 	m.element[2].a[1] = 0.0;
-	m.element[2].a[2] = 0.0;
+	m.element[2].a[2] = 10;
 
 	m.element[4].a[0] = 0.0;
 
