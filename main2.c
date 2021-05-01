@@ -97,35 +97,32 @@ void element_print(struct element *b)
 
 void element_velocity_draw(struct element *e, int index)
 {
-	vec4 *r, *v_local, *v_frame, *v_total;
+	vec4 r, *v_local, *v_frame, *v_total;
 	vec4 r0;
 
 	local2parent(e, &vec4_null, &r0);
 
-	r = (vec4 *)&e->tr[index];
+	sum(&r0, (vec4 *)&e->tr[index], &r);
+
 	v_local = (vec4 *)&e->_tv[index];
 	v_frame = (vec4 *)&e->__tv[index];
 	v_total = (vec4 *)&e->___tv[index];
 
-	sum(&r0, r, r);
+	glColor3f(1.0, 1.0, 1.0);
+	draw_vec4(&r, v_total);
 
 	glColor3f(1.0, 1.0, 0.0);
-	draw_vec4(r, v_frame);
+	draw_vec4(&r, v_local);
+	sum(&r, v_local, &r);
 
 	glColor3f(0.0, 1.0, 1.0);
-	draw_vec4(r, v_total);
-
-	sum(r, v_frame, r);
-
-	glColor3f(0.0, 0.0, 1.0);
-	draw_vec4(r, v_local);
+	draw_vec4(&r, v_frame);
 }
 
 
 void element_draw(struct element *e)
 {
 	vec4 r0, *r;
-	vec4 r1, r2;
 
 	glPushMatrix();
 
@@ -136,22 +133,7 @@ void element_draw(struct element *e)
 	/* Basis origin */
 	local2parent(e, &vec4_null, &r0);
 
-#if DEBUG_TRANSFORM
-	r1[0] = 0.5;
-	r1[1] = 0.5;
-	r1[2] = 0.5;
-	r1[3] = 1.0;
-
-	local2parent(e, &r1, &r1);
-
-	draw_segment_vec4(&r0, &r1);
-#endif
-
-	/* Angular velocity vector */
-	glColor3f(1.0, 1.0, 1.0); /* white */
-	draw_vec4(&r0, &e->a);
-
-	/* basis + basis local velocity */
+	/* basis */
 	glColor3f(1.0, 0.0, 0.0);
 	r = (vec4 *)&e->tr[0];
 	draw_vec4(&r0, r);
