@@ -16,17 +16,16 @@
 #include "physics2.h"
 #include "draw.h"
 
-GLuint frame_list;
-struct timeval t0;
-int pause = 0;
-struct timeval tprev;
-scalar t = 0.0;
+static struct timeval t0;
+static int _pause = 0;
+static struct timeval tprev;
+static scalar t = 0.0;
 
-double cz = -10.0;
-double cy = 0.0;
-double cx = 0.0;
+static double cz = -10.0;
+static double cy = 0.0;
+static double cx = 0.0;
 
-double ty = 0.0;
+static double ty = 0.0;
 
 static struct model m = {
 	.elements = 5,
@@ -150,8 +149,6 @@ void element_draw(struct element *e)
 	element_velocity_draw(e, 4);
 	element_velocity_draw(e, 8);
 
-//	glCallList(frame_list);
-
 	glPopMatrix();
 }
 
@@ -218,7 +215,7 @@ static void display_func(void)
 
 	gettimeofday(&tnow, NULL);
 
-	if (!pause)
+	if (!_pause)
 		t += (float)(tnow.tv_sec - tprev.tv_sec) + (tnow.tv_usec - tprev.tv_usec) / 1000000.0f;
 
 	tprev = tnow;
@@ -269,10 +266,10 @@ static void keyboard (unsigned char key, int x, int y)
 		break;
 
 	case ' ':
-		if (pause)
-			pause = 0;
+		if (_pause)
+			_pause = 0;
 		else
-			pause = 1;
+			_pause = 1;
 
 		break;
 	default:
@@ -497,8 +494,6 @@ int main(int argc, char *argv[])
 	culling_init();
 
 	draw_init();
-
-	frame_list = frame_display_list();
 
 	gettimeofday(&t0, NULL);
 	tprev = t0;
