@@ -218,6 +218,66 @@ static inline void sum_mat4(mat4 *m, mat4 *n, mat4 *l)
 	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), sum_mat4((void *)m, (void *)n, (void *)o),	\
 	choice_error()))))
 
+static inline void sub_vec3(vec3 *u, vec3 *v, vec3 *w)
+{
+	(*w)[0] = (*u)[0] - (*v)[0];
+	(*w)[1] = (*u)[1] - (*v)[1];
+	(*w)[2] = (*u)[2] - (*v)[2];
+}
+
+static inline void sub_vec4(vec4 *u, vec4 *v, vec4 *w)
+{
+	(*w)[0] = (*u)[0] - (*v)[0];
+	(*w)[1] = (*u)[1] - (*v)[1];
+	(*w)[2] = (*u)[2] - (*v)[2];
+	(*w)[3] = (*u)[3] - (*v)[3];
+}
+
+static inline void sub_mat3(mat3 *m, mat3 *n, mat3 *l)
+{
+	(*l)[0] = (*m)[0] - (*n)[0];
+	(*l)[1] = (*m)[1] - (*n)[1];
+	(*l)[2] = (*m)[2] - (*n)[2];
+
+	(*l)[3] = (*m)[3] - (*n)[3];
+	(*l)[4] = (*m)[4] - (*n)[4];
+	(*l)[5] = (*m)[5] - (*n)[5];
+
+	(*l)[6] = (*m)[6] - (*n)[6];
+	(*l)[7] = (*m)[7] - (*n)[7];
+	(*l)[8] = (*m)[8] - (*n)[8];
+}
+
+static inline void sub_mat4(mat4 *m, mat4 *n, mat4 *l)
+{
+	(*l)[0] = (*m)[0] - (*n)[0];
+	(*l)[1] = (*m)[1] - (*n)[1];
+	(*l)[2] = (*m)[2] - (*n)[2];
+	(*l)[3] = (*m)[3] - (*n)[3];
+
+	(*l)[4] = (*m)[4] - (*n)[4];
+	(*l)[5] = (*m)[5] - (*n)[5];
+	(*l)[6] = (*m)[6] - (*n)[6];
+	(*l)[7] = (*m)[7] - (*n)[7];
+
+	(*l)[8] = (*m)[8] - (*n)[8];
+	(*l)[9] = (*m)[9] - (*n)[9];
+	(*l)[10] = (*m)[10] - (*n)[10];
+	(*l)[11] = (*m)[11] - (*n)[11];
+
+	(*l)[12] = (*m)[12] - (*n)[12];
+	(*l)[13] = (*m)[13] - (*n)[13];
+	(*l)[14] = (*m)[14] - (*n)[14];
+	(*l)[15] = (*m)[15] - (*n)[15];
+}
+
+#define sub(m, n, o)	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec3 *), sub_vec3((void *)m, (void *)n, (void *)o),	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), vec4 *), sub_vec4((void *)m, (void *)n, (void *)o),	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat3 *), sub_mat3((void *)m, (void *)n, (void *)o),	\
+	__builtin_choose_expr(__builtin_types_compatible_p(typeof(m), mat4 *), sub_mat4((void *)m, (void *)n, (void *)o),	\
+	choice_error()))))
+
 static inline void product_mat3(mat3 *m, mat3 *n, mat3 *l)
 {
 	mat3 k;
