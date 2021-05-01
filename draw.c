@@ -291,9 +291,10 @@ void vector_vertex_list(float r, float l, int faces)
 {
 	float length = 0.90 * l;
 	vec3 o = {0.0, 0.0, length};
+	vec3 o_cylinder = {-r, -r, 0};
 
 	/* draw cylinder, x% of the length */
-	cylinder_vertex_list(NULL, r, length, faces);
+	cylinder_vertex_list(&o_cylinder, r, length, faces);
 
 	/* draw cone, (1-x)% of the length */
 	cone_vertex_list(&o, r * 1.5, 1.0 - length, faces);
