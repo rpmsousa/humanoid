@@ -25,12 +25,13 @@ struct element {
 
 	mat4 tr_inverse;
 
+	vec4 v0; /* basis origin speed vector, in ... */
+	vec4 _v0;
+
 	mat4 _tv; /* velocity of basis unit vectors, one column per vector (parent coordinates) */
 	mat4 __tv; /* velocity of basis unit vectors, one column per vector (own coordinates) */
 	mat4 ___tv; /* velocity of basis unit vectors, one column per vector */
 	mat4 ____tv; /* total velocity, parent coordinates */
-	mat4 _____tv; /* total velocity, own coordinates */
-	mat4 r_v; /* rotation matrix */
 
 	vec4 a; /* angular velocity vector (parent coordinates, degrees / s), v_p = a x r. The advantage of using parent coordinates
 		is that the vector coordinates remains fixed as the basis rotates */
