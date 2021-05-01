@@ -28,8 +28,8 @@ double cx = 0.0;
 
 double ty = 0.0;
 
-struct model m = {
-	.elements = 3,
+static struct model m = {
+	.elements = 5,
 	.element = {
 		[0] = {
 			.parent = NULL,
@@ -44,7 +44,7 @@ struct model m = {
 			.tr = {1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 0, 1, 0,
-				5, 0, 0, 1},
+				0, 0, 0, 1},
 		},
 
 		[2] = {
@@ -52,23 +52,23 @@ struct model m = {
 			.tr = {1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 0, 1, 0,
-				0, 5, 0, 1},
+				2, 0, 0, 1},
 		},
 
 		[3] = {
-			.parent = &m.element[0],
-			.tr = {1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 1, 0,
-				0, 0, 5, 1},
-		},
-
-		[4] = {
 			.parent = &m.element[2],
 			.tr = {1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 0, 1, 0,
-				5, 0, 0, 1},
+				0, 2, 0, 1},
+		},
+
+		[4] = {
+			.parent = &m.element[3],
+			.tr = {1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0,
+				2, 0, 0, 1},
 		},
 		
 		[5] = {
@@ -76,7 +76,7 @@ struct model m = {
 			.tr = {1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 0, 1, 0,
-				5, 0, 0, 1},
+				0, -3, 0, 1},
 		},
 	},
 };
@@ -514,18 +514,20 @@ int main(int argc, char *argv[])
 //	rotate(&m.element[5].tr, 30, 0, 1, 0);
 
 	m.element[0].a[0] = 0.0;
-	m.element[0].a[1] = 60.0; /* angular velocity about the y axis */
+	m.element[0].a[1] = 20.0; /* angular velocity about the y axis */
 	m.element[0].a[2] = 0.0;
 
-	m.element[1].a[0] = 0.0;
+	m.element[1].a[0] = 20.0;
 	m.element[1].a[1] = 0.0;
-	m.element[1].a[2] = 10; /* angular velocity about the z axis */
+	m.element[1].a[2] = 0; /* angular velocity about the z axis */
 
-	m.element[2].a[0] = 0.0;
+	m.element[2].a[0] = 20.0;
 	m.element[2].a[1] = 0.0;
-	m.element[2].a[2] = 10;
+	m.element[2].a[2] = 0;
 
-	m.element[4].a[0] = 0.0;
+	m.element[3].a[0] = 20.0;
+
+	m.element[4].a[0] = -60.0;
 
 	model_init(&m);
 
