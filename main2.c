@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <sys/time.h>
+
 #ifdef USE_GLUT
 #include <GL/glut.h>
 #else
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <GL/glx.h>
-//#include <unistd.h>
+#include <unistd.h>
 #endif
-#include <GL/glu.h>
+
 #include <math.h>
 #include "linear.h"
 #include "model2.h"
@@ -407,6 +408,8 @@ static void dump_info(void)
 			glIsEnabled(GL_SAMPLE_COVERAGE));
 }
 
+#ifdef USE_GLUT
+#else
 static void keypress_event_handler(XKeyEvent *xevent)
 {
 	printf("%u %c\n", xevent->keycode, (int)XLookupKeysym(xevent, 0));
@@ -442,6 +445,7 @@ static void event_handler(Display *display, Window window)
 		}
 	}
 }
+#endif
 
 #define XPOS	100
 #define YPOS	100
@@ -464,7 +468,7 @@ int main(int argc, char *argv[])
 	glutDisplayFunc(display_func);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
-	glutIdleFunc(display);
+	glutIdleFunc(display_func);
 #else
 	Display *display;
 	Window root;
